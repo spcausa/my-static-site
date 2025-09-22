@@ -7,7 +7,7 @@
   <h2>Translate English to Odia</h2>
 
   <!-- User enters their Hugging Face token -->
-  <label for="token">As of now its under construction. So please Enter your Hugging Face token:</label><br>
+  <label for="token">Its under construction, for POE, Enter your Hugging Face token:</label><br>
   <input type="password" id="token" placeholder="hf_xxxYourTokenxxx"><br><br>
 
   <textarea id="inputText" rows="4" cols="50" placeholder="Enter English text"></textarea><br><br>
@@ -24,30 +24,34 @@
         return;
       }
 
-      const input = document.getElementById("inputText").value;
+      const input = document.getElementById("inputText").value.trim();
+      if (!input) {
+        alert("Please enter some text to translate!");
+        return;
+      }
+
+      const model = "Helsinki-NLP/opus-mt-en-ori"; // free-to-infer model
+
+      document.getElementById("output").innerText = "Translating...";
 
       try {
-        const response = await fetch(
-          "https://api-inference.huggingface.co/models/facebook/nllb-200-distilled-600M",
-          {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              inputs: input,
-              parameters: { src_lang: "eng_Latn", tgt_lang: "ori_Orya" }
-            }),
-          }
-        );
+        const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ inputs: input })
+        });
 
         const data = await response.json();
 
         if (data.error) {
           document.getElementById("output").innerText = "Error: " + data.error;
+        } else if (Array.isArray(data) && data[0]?.translation_text) {
+          document.getElementById("output").innerText = data[0].translation_text;
         } else {
-          document.getElementById("output").innerText = data[0]?.translation_text || "No result";
+          document.getElementById("output").innerText = "No translation result.";
         }
       } catch (err) {
         document.getElementById("output").innerText = "Error: " + err.message;
